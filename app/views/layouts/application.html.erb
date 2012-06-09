@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MusicianGraph</title>
+  <%# stylesheet_link_tag    "application", :media => "all" %>
+  <%=stylesheet_link_tag    "resources/css/ext-all" %>
+  <%= stylesheet_link_tag    "resources/master.css" %>
+  
+  <%# javascript_include_tag "application" %>
+  <%= javascript_include_tag 'ext-js/ext-all.js', 'jquery', 'jquery_ujs', 'arbor', 'arbor-tween', 'data_manager' %>
+  <%= csrf_meta_tags %>
+</head>
+<body>
+
+<%= yield %>
+
+</body>
+</html>

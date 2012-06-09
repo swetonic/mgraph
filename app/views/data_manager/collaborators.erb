@@ -1,0 +1,193 @@
+
+<html lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+    
+  <div id="container"></div>
+  
+  <div style="font-size:14px; padding: 10px 10px 10px 10px;">
+    <div id="info">
+    </div>
+
+    <table cellspacing="10">
+    <tr>
+        <td>
+            <div style="display:inline" id="musicianName"></div>'s collaborators <a href="javascript:" id="help">?</a>
+            <img id="loader" style="display:none" src="/ajax-loader2.gif"/>
+            <br>
+            
+            <a href="javascript:" id="change">edit</a>
+        
+            <div style="display:none" id="editBox">
+                <input id="newName" type="text" value="type here"/> 
+                <a href="javascript:redraw()">redraw</a>
+            </div>
+        </td>
+        <td><div style="padding-left:40px;"></div></td>
+        <td valign="top">
+            <div id="tip-slider">max nodes</div>
+        </td>
+    </tr>
+    </table>
+    <div id="artistInfo" style="display:none; float:right;">
+        artist info
+    </div>
+
+  </div>
+  
+  <canvas id="viewport" width="200" height="200"></canvas>
+
+
+    <script type="text/javascript">
+        var maxNodes = 7;
+        var particleSystem = null;
+        var musicianName = "<%= @name %>";
+        
+        toggleEditBox = function() {
+            $('#editBox').fadeToggle("slow", function() {
+                $('#newName').focus();
+            });
+        }
+        
+        fetchMusicianCollaborators = function(name) {
+            $('#newName').get(0).value = name
+            updateMusicianName(name);
+            redraw();
+        }
+        
+        updateMusicianName = function(name) {
+            $('#musicianName').get(0).innerHTML = name;
+        }
+
+        updateCollaborators = function() {
+            drawCollaborators(ajaxUrl(musicianName));
+        }
+        
+        clearNodes = function() {
+            if(particleSystem != null) {
+                particleSystem.eachNode(function(node, pt) {
+                    particleSystem.pruneNode(node);
+                });
+            }
+        }
+        
+        ajaxUrl = function(name) {
+            var url = "/data_manager/collaborators_json?name=" + name + "&max_nodes=" + maxNodes;
+            return url;
+        }
+        
+        redraw = function() {
+            $('#editBox').hide();
+            var newName = $('#newName').get(0).value;
+            updateMusicianName(newName);
+            drawCollaborators(ajaxUrl(newName));
+        }
+        
+        $('#change').click(function() { toggleEditBox(); });
+
+        $('#newName').keydown(function(event) {
+            if(event.which == 13) { //enter key
+                var newName = $('#newName').get(0).value;
+                if(newName.length > 0) {
+                    redraw();
+                }
+            }
+        });
+        
+        $('#help').click(function(event) {
+
+            var helpText = $('#helpTextResource').get(0).innerHTML;
+            $('#helpTextContainer').append("<div id=\"helpText\" class=\"help\">" + helpText + "</div>");
+            
+            var helpWindow = Ext.create('widget.window', {
+                height: 280,
+                width: 400,
+                contentEl:'helpText',
+                x: event.clientX,
+                y: event.clientY,
+                title: '',
+                modal: true,
+                draggable: false,
+                closable: true,
+                plain: true,
+                layout: 'fit'
+            });
+            
+            
+            helpWindow.show();
+        });
+
+        drawCollaborators = function(url) {
+            var renderer = Renderer("#viewport");
+            var sys = arbor.ParticleSystem(4000, 500, 0.5, false);
+            particleSystem = sys;
+            $.ajax(url, { 
+                beforeSend: function(jqXHR, settings) {
+                    $('#loader').show();
+                },
+                success: function(data, textStatus, jqXHR) {
+                    $('#loader').hide();
+                    var collaborators = data;
+                    var nodeCount = 0;            
+                    for(nodeName in collaborators) {
+                        nodeCount += 1;
+                        var node1 = sys.addNode(nodeName, {name:nodeName, color:"#000000"});
+                        //console.log(nodeName);
+                        for(i in collaborators[nodeName]) {
+                            var node2 = sys.getNode(collaborators[nodeName][i])
+                            if(node2 == null) {
+                                node2 = sys.addNode(collaborators[nodeName][i], {color:"#787878", name:collaborators[nodeName][i]});
+                            }
+                            sys.addEdge(node1, node2, {});
+                        }
+                    }
+                    
+                    if(nodeCount == 0) {
+                        $('#info').text("No Data");    
+                    }
+                    sys.renderer = renderer;                    
+                    }
+                });
+        }
+        
+        
+        $(document).ready(function() {
+            maxNodes = <%= @max_nodes %>;
+            updateMusicianName(musicianName);
+            drawCollaborators(ajaxUrl(musicianName));
+            
+        });
+
+
+    </script>
+
+<div id="helpTextContainer"></div>
+    
+<div id="helpTextResource" style="display:none;" class="help">
+<p>
+This application uses the allmusic.com API, supplied by <a href="http://developer.rovicorp.com/docs" target="_new">Rovi</a>.
+The graph display code is provided by <a href="http://arborjs.org" target="_new2">arbor.js</a>
+</p>
+<p>
+My motivation for this project was to answer the question "Who played with whom?" in the jazz world.
+The graph is hardly a complete picture since I rely on allmusic.com's data.
+</p> 
+<p>The max nodes slider controls the number of primary nodes in the graph: these are drawn with black text. The nodes connected
+to primary nodes are the musicians that played with the person named in the primary node.</p>
+<p>You can type any name in the edit box, but it works best with jazz musicians because they often had so many collaborators.</p>
+<p>There's at least one know bug, based on non-ascii characters returned by the Rovi API. If you find a bug, send me an email!.</p>
+<img src="/asdfgh.png">
+</div>
+    
+    
+    
+</body>
+</html>
+
+
+
+
+
+
