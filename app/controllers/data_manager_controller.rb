@@ -103,7 +103,7 @@ class DataManagerController < ApplicationController
             sleep(1)
             response = Net::HTTP.get_response( URI.parse( url ) )
         end
-        
+        sleep(0.2)
         return response.body
     end
 
