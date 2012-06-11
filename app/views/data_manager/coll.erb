@@ -1,5 +1,24 @@
 
-<%= javascript_include_tag 'ext-js/ext-all.js', 'jquery.min', 'arbor', 'arbor-tween', 'data_manager' %>
+<html lang="en">
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <%= javascript_include_tag 'coll.js', 'ext-js/ext-all.js', 'jquery.min', 'raphael-min.js', 'dracula_graffle.js', 'dracula_graph.js' %>
+   <script src="http://d3js.org/d3.v2.js?2.9.1"></script>
+   <style>
+
+    .node {
+      font: 10px sans-serif;
+    }
+    
+    .link {
+      stroke: steelblue;
+      stroke-opacity: .4;
+      fill: none;
+    }
+</style>
+
+</head>
+<body>
     
   <div id="container"></div>
   
@@ -33,14 +52,15 @@
 
   </div>
   
-  <canvas id="viewport" width="200" height="200"></canvas>
-
+  <div id="canvas"></div>
 
     <script type="text/javascript">
+        var svg = null;
+        var cluster = null;
         var maxNodes = 7;
-        var particleSystem = null;
         var musicianName = "<%= @name %>";
-        
+        var bundle = null;
+
         toggleEditBox = function() {
             $('#editBox').fadeToggle("slow", function() {
                 $('#newName').focus();
@@ -62,22 +82,8 @@
             drawCollaborators(ajaxUrl(musicianName));
         }
         
-        clearNodes = function() {
-            if(particleSystem != null) {
-                particleSystem.stop();
-                particleSystem.eachNode(function(node, pt) {
-                    particleSystem.pruneNode(node);
-                });
-                particleSystem = null;
-                particleSystem = createParticleSystem();
-            }
-            else {
-                console.log("particle system is null, can't prune nodes");
-            }
-        }
-        
         ajaxUrl = function(name) {
-            var url = "/data_manager/collaborators_json?name=" + name + "&max_nodes=" + maxNodes;
+            var url = "/data_manager/coll_json?name=" + name + "&max_nodes=" + maxNodes;
             return url;
         }
         
@@ -122,50 +128,72 @@
             helpWindow.show();
         });
 
-        createParticleSystem = function() {
-            //var sys = arbor.ParticleSystem(4000, 500, 0.5, false);
-            var sys = arbor.ParticleSystem();
-            sys.stop();
-            sys.parameters({stiffness:600, repulsion:1000, gravity:true, dt:0.02})
-            return sys;
-        }
 
         drawCollaborators = function(url) {
-            var renderer = Renderer("#viewport");
-            particleSystem = createParticleSystem();
-            
             $.ajax(url, { 
                 beforeSend: function(jqXHR, settings) {
                     $('#loader').show();
                 },
                 success: function(data, textStatus, jqXHR) {
                     $('#loader').hide();
-                    var collaborators = data;
-                    var nodeCount = 0;            
-                    for(nodeName in collaborators) {
-                        nodeCount += 1;
-                        var node1 = particleSystem.addNode(nodeName, {name:nodeName, color:"#000000"});
-                        //console.log(nodeName);
-                        for(i in collaborators[nodeName]) {
-                            var node2 = particleSystem.getNode(collaborators[nodeName][i])
-                            if(node2 == null) {
-                                node2 = particleSystem.addNode(collaborators[nodeName][i], {color:"#787878", name:collaborators[nodeName][i]});
-                            }
-                            particleSystem.addEdge(node1, node2, {});
-                        }
-                    }
+                    var nodeCount = data.length;
+                    console.log(data);
                     
+                  var nodes = cluster(packages.root(data)),
+                      links = packages.imports(nodes);
+                
+                  svg.selectAll(".link")
+                      .data(bundle(links))
+                    .enter().append("path")
+                      .attr("class", "link")
+                      .attr("d", line);
+                
+                  svg.selectAll(".node")
+                      .data(nodes.filter(function(n) { return !n.children; }))
+                    .enter().append("g")
+                      .attr("class", "node")
+                      .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
+                    .append("text")
+                      .attr("dx", function(d) { return d.x < 180 ? 8 : -8; })
+                      .attr("dy", ".31em")
+                      .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+                      .attr("transform", function(d) { return d.x < 180 ? null : "rotate(180)"; })
+                      .text(function(d) { return d.data.key; });
+      
                     if(nodeCount == 0) {
                         $('#info').text("No Data");    
                     }
-                    particleSystem.renderer = renderer;                    
+                    else {
                     }
-                });
-            particleSystem.start();
+                }
+            });
         }
         
         
         $(document).ready(function() {
+            var diameter = 960,
+            radius = diameter / 2,
+            innerRadius = radius - 120;
+        
+            cluster = d3.layout.cluster()
+                .size([360, innerRadius])
+                .sort(null)
+                .value(function(d) { return d.size; });
+            
+            bundle = d3.layout.bundle();
+            
+            var line = d3.svg.line.radial()
+                .interpolate("bundle")
+                .tension(.85)
+                .radius(function(d) { return d.y; })
+                .angle(function(d) { return d.x / 180 * Math.PI; });
+
+            svg = d3.select("body").append("svg")
+                .attr("width", diameter)
+                .attr("height", diameter)
+              .append("g")
+                .attr("transform", "translate(" + radius + "," + radius + ")");
+
             maxNodes = <%= @max_nodes %>;
             updateMusicianName(musicianName);
             drawCollaborators(ajaxUrl(musicianName));
