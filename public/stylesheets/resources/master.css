@@ -6,3 +6,7 @@
 #helpText.help p {
     margin-bottom:8px;
 }
+
+#controls td {
+    vertical-align:top;
+}
