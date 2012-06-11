@@ -68,9 +68,15 @@
         
         clearNodes = function() {
             if(particleSystem != null) {
+                particleSystem.stop();
                 particleSystem.eachNode(function(node, pt) {
                     particleSystem.pruneNode(node);
                 });
+                particleSystem = null;
+                particleSystem = createParticleSystem();
+            }
+            else {
+                console.log("particle system is null, can't prune nodes");
             }
         }
         
@@ -120,10 +126,18 @@
             helpWindow.show();
         });
 
+        createParticleSystem = function() {
+            //var sys = arbor.ParticleSystem(4000, 500, 0.5, false);
+            var sys = arbor.ParticleSystem();
+            sys.stop();
+            sys.parameters({stiffness:600, repulsion:1000, fps:30, gravity:true, dt:0.02})
+            return sys;
+        }
+
         drawCollaborators = function(url) {
             var renderer = Renderer("#viewport");
-            var sys = arbor.ParticleSystem(4000, 500, 0.5, false);
-            particleSystem = sys;
+            particleSystem = createParticleSystem();
+            
             $.ajax(url, { 
                 beforeSend: function(jqXHR, settings) {
                     $('#loader').show();
@@ -134,23 +148,24 @@
                     var nodeCount = 0;            
                     for(nodeName in collaborators) {
                         nodeCount += 1;
-                        var node1 = sys.addNode(nodeName, {name:nodeName, color:"#000000"});
+                        var node1 = particleSystem.addNode(nodeName, {name:nodeName, color:"#000000"});
                         //console.log(nodeName);
                         for(i in collaborators[nodeName]) {
-                            var node2 = sys.getNode(collaborators[nodeName][i])
+                            var node2 = particleSystem.getNode(collaborators[nodeName][i])
                             if(node2 == null) {
-                                node2 = sys.addNode(collaborators[nodeName][i], {color:"#787878", name:collaborators[nodeName][i]});
+                                node2 = particleSystem.addNode(collaborators[nodeName][i], {color:"#787878", name:collaborators[nodeName][i]});
                             }
-                            sys.addEdge(node1, node2, {});
+                            particleSystem.addEdge(node1, node2, {});
                         }
                     }
                     
                     if(nodeCount == 0) {
                         $('#info').text("No Data");    
                     }
-                    sys.renderer = renderer;                    
+                    particleSystem.renderer = renderer;                    
                     }
                 });
+            particleSystem.start();
         }
         
         

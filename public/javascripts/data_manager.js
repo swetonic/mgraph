@@ -12,11 +12,12 @@
             width: 180,
             minValue: 2,
             value: 4,
-            maxValue: 10,
+            maxValue: 7,
         });
         
         slider.addListener("changecomplete", function(slider, newValue, thumb) {
             maxNodes = newValue;
+            clearNodes();
             updateCollaborators();
         });
         
@@ -30,6 +31,8 @@
         var activeNode = null
         var mouseDown = false
         var dragging = false;
+        var lastEnergyMean = 0;
+        var lastMeanEqual = 0;
         
         var myRenderer = {
                   
@@ -183,10 +186,21 @@
             },
             
             redraw: function() { 
-                if (particleSystem===null) 
+                if(particleSystem===null) 
                 {
                     return
                 }
+                var en = particleSystem.energy();
+                if(lastEnergyMean == en.mean) {
+                    if(lastMeanEqual >= 10) {
+                    lastMeanEqual += 1;
+                        return;
+                    }
+                    lastMeanEqual += 1;
+                }
+                
+                lastEnergyMean = en.mean;
+                //console.log(en.max, en.mean, en.n, particleSystem.fps());
                 
                 ctx.clearRect(0,0, canvas.width, canvas.height);
                 ctx.strokeStyle = "#d3d3d3"
