@@ -78,7 +78,13 @@
             $('#musicianName').get(0).innerHTML = name;
         }
 
-        updateCollaborators = function() {
+        clearGraph = function() {
+            $('g').remove()
+        }
+
+        updateCollaborators = function(nodeCount) {
+            maxNodes = nodeCount;
+            clearGraph();
             drawCollaborators(ajaxUrl(musicianName));
         }
         
@@ -86,6 +92,7 @@
             var url = "/data_manager/coll_json?name=" + name + "&max_nodes=" + maxNodes;
             return url;
         }
+        
         
         redraw = function() {
             $('#editBox').hide();

@@ -1,26 +1,5 @@
 (function() {
 
-    Ext.require('Ext.slider.*');
-
-    Ext.onReady(function(){
-        var sliderComponent = null;
-        
-        var slider = Ext.create('Ext.slider.Single', {
-            renderTo: 'tip-slider',
-            hideLabel: true,
-            width: 180,
-            minValue: 2,
-            value: 4,
-            maxValue: 7,
-        });
-        
-        slider.addListener("changecomplete", function(slider, newValue, thumb) {
-            //clear the relationships, then make another ajax call
-            updateCollaborators(newValue);
-        });
-        
-        
-    });
 
   packages = {
 

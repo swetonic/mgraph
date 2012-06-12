@@ -6,9 +6,73 @@ class DataManagerController < ApplicationController
     SHARED_SECRET = 'AQ3sKz9ugz'
     MAX_NODES = 5
     
+    NOTES = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']
+    NOTES_WITH_FLATS = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab']
+    ENHARMONIC_EQUIVALENTS = {
+        'A#' => 'Bb', 'Bb' => 'A#',
+        'C#' => 'Db', 'Db' => 'C#',
+        'D#' => 'Eb', 'Eb' => 'D#',
+        'F#' => 'Gb', 'Gb' => 'F#',
+        'G#' => 'Ab', 'Ab' => 'G#',
+        'B' => 'Cb',
+        'E' => 'Fb'
+    }
     
-    def collaborators3
-        @collaborator_data = call_api(params['name'])
+    TRIADS = {
+        'major' => [0, 4, 7], 
+        'minor' => [0, 3, 7], 
+        'augmented' => [0, 4, 8],
+        'diminished' => [0, 3, 6]
+    }
+
+    SEVENTH_CHORDS = {
+        'major 7' => [0, 4, 7, 11], 
+        'minor 7' => [0, 3, 7, 10], 
+        'dominant 7' => [0, 4, 7, 10],
+        'diminished 7' => [0, 3, 6, 9]
+    }
+
+    NOTE_REPLACE_MAP = {
+        'C diminished 7' => {'F#'=>1, 'D#'=>1},
+        'C minor 7' => {'A#'=>1, 'D#'=>1},
+        'C dominant 7' => {'A#'=>1},
+        'F diminished 7' => {'G#'=>1},
+        'F minor 7' => {'G#'=>1, 'D#'=>1},
+        'F dominant 7' => {'D#'=>1},
+    }
+    
+    def chords
+        if not params.key?('root')
+            @root = "A"
+        else
+            @root = params['root']
+        end
+    end
+    
+    def chords_json
+        if not params.key?('root')
+            root = "A"
+        else
+            root = params['root']
+        end
+        if NOTES.index(root) != nil
+            render :json => convert_hash(get_chords(root)).to_json
+        else
+            render :json => {'error' => "Couldn't find root #{root}"}.to_json
+        end
+    end
+    
+    def triads_json
+        if not params.key?('root')
+            root = "A"
+        else
+            root = params['root']
+        end
+        if NOTES.index(root) != nil
+            render :json => convert_hash(get_triads(root)).to_json
+        else
+            render :json => {'error' => "Couldn't find root #{root}"}.to_json
+        end
     end
 
     def coll
@@ -16,6 +80,11 @@ class DataManagerController < ApplicationController
     end
 
     def coll2
+        if not params.has_key?('name')
+            @name = "miles davis"
+        else
+            @name = params['name']
+        end
     end
 
     def coll_json
@@ -57,8 +126,78 @@ class DataManagerController < ApplicationController
     def collaborators_json
         render :json => collaborators_hash
     end
-    
+
+    ###########################################    
     private
+
+    #convert hash to conform to d3's array format
+    def convert_hash(hash)
+        val = 1000
+        return_array = []
+        
+        hash.keys.each do |name|
+            return_array << {"imports" => hash[name], "name" => name, "size" => val}
+        end
+
+        all_notes = {}
+        return_array = replace_notes(return_array)
+        return_array.each do |hash|
+            hash['imports'].each do |note|
+                all_notes[note] = 1
+            end
+        end
+        
+        all_notes.keys.each do |note|
+            return_array << {"imports" => [], "name" => note, "size" => val}
+        end
+        return_array
+    end
+    
+    #lookup chords/triads to see if they need enharmonic equivalents
+    def replace_notes(array)
+        array.each do |hash|
+            if NOTE_REPLACE_MAP.key?(hash['name'])
+                should_replace = NOTE_REPLACE_MAP[hash['name']]
+                hash['imports'].each_with_index do |note,idx|
+                    if should_replace.key?(note)
+                        hash['imports'][idx] = ENHARMONIC_EQUIVALENTS[note]
+                    end
+                end
+            end
+        end
+        array
+    end
+    
+    def get_chords(root)
+        triads = {}
+        idx = NOTES.index(root)
+        if idx != -1
+            SEVENTH_CHORDS.keys.each do |triad_type|
+                notes = []
+                SEVENTH_CHORDS[triad_type].each do |offset|
+                    notes << NOTES[(idx+offset)%12]
+                end
+                triads[root + " " + triad_type] = notes
+            end
+        end
+        triads
+    end
+
+    def get_triads(root)
+        triads = {}
+        idx = NOTES.index(root)
+        if idx != -1
+            TRIADS.keys.each do |triad_type|
+                notes = []
+                TRIADS[triad_type].each do |offset|
+                    notes << NOTES[(idx+offset)%12]
+                end
+                triads[root + " " + triad_type] = notes
+            end
+        end
+        triads
+    end
+    
     def collaborators_hash
         response = JSON.parse(call_info_api(params['name']))
         if response['status'] == 'error'

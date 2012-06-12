@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
-<script src="http://d3js.org/d3.v2.js?2.9.1"></script>
 
-<%= javascript_include_tag 'coll.js' %>
+<!--<script src="http://d3js.org/d3.v2.js?2.9.1"></script>-->
+
+<%= javascript_include_tag 'd3.v2.js', 'ext-js/ext-all.js', 'd3-packages', 'coll.js', 'jquery.min' %>
 
 <style>
 
@@ -18,54 +19,154 @@
 
 </style>
 <body>
+  <div id="controls" style="font-size:14px; padding: 10px 10px 10px 10px;">
+    <div id="info">
+    </div>
+
+    <table>
+    <tr>
+        <td>
+            <div style="display:inline" id="musicianName"></div> <a href="javascript:" id="help">?</a>
+            <img id="loader" style="display:none" src="/ajax-loader2.gif" alt="loading..." />
+            <br>
+            
+            <a href="javascript:" id="change">edit</a>
+        
+            <div style="display:none" id="editBox">
+                <input id="newName" type="text" value="type here"/> 
+                <a href="javascript:redraw()">redraw</a>
+            </div>
+        </td>
+        <td><div style="padding-left:40px;"></div></td>
+        <td>
+            <div id="tip-slider">max nodes</div>
+        </td>
+    </tr>
+    </table>
+    <div id="artistInfo" style="display:none; float:right;">
+        artist info
+    </div>
+
+  </div>
+
 <script>
+    var musicianName = null;
+    var maxNodes = 4;
+    clearGraph = function() {
+        $('g').remove()
+        $('svg').remove()
+    }
 
-var diameter = 960,
-    radius = diameter / 2,
-    innerRadius = radius - 120;
+    toggleEditBox = function() {
+        $('#editBox').fadeToggle("slow", function() {
+            $('#newName').focus();
+        });
+    }
 
-var cluster = d3.layout.cluster()
-    .size([360, innerRadius])
-    .sort(null)
-    .value(function(d) { return d.size; });
+    redraw = function() {
+        if($('#newName').get(0).value.length > 0 && $('#newName').get(0).value != musicianName) {
+            updateMusicianName($('#newName').get(0).value);
+            updateCollaborators(maxNodes);
+        }
+    }
+    
+    updateMusicianName = function(newName) {
+        musicianName = newName;
+        $('#musicianName').get(0).innerHTML = newName + "'s collaborators";
+    }
+    
+    $('#change').click(function() { toggleEditBox(); });
 
-var bundle = d3.layout.bundle();
+    $('#newName').keydown(function(event) {
+        if(event.which == 13) { //enter key
+            var newName = $('#newName').get(0).value;
+            if(newName.length > 0) {
+                updateMusicianName(newName);
+                updateCollaborators(maxNodes);
+            }
+        }
+    });
 
-var line = d3.svg.line.radial()
-    .interpolate("bundle")
-    .tension(.85)
-    .radius(function(d) { return d.y; })
-    .angle(function(d) { return d.x / 180 * Math.PI; });
+    ajaxUrl = function(name) {
+        var url = "/data_manager/coll_json?name=" + name + "&max_nodes=" + maxNodes;
+        return url;
+    }
 
-var svg = d3.select("body").append("svg")
-    .attr("width", diameter)
-    .attr("height", diameter)
-  .append("g")
-    .attr("transform", "translate(" + radius + "," + radius + ")");
-
-d3.json("/data_manager/coll_json?name=miles%20davis", function(classes) {
-  var nodes = cluster(packages.root(classes)),
-      links = packages.imports(nodes);
-
-  svg.selectAll(".link")
-      .data(bundle(links))
-    .enter().append("path")
-      .attr("class", "link")
-      .attr("d", line);
-
-  svg.selectAll(".node")
-      .data(nodes.filter(function(n) { return !n.children; }))
-    .enter().append("g")
-      .attr("class", "node")
-      .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
-    .append("text")
-      .attr("dx", function(d) { return d.x < 180 ? 8 : -8; })
-      .attr("dy", ".31em")
-      .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
-      .attr("transform", function(d) { return d.x < 180 ? null : "rotate(180)"; })
-      .text(function(d) { return d.data.key; });
+    updateCollaborators = function(nodeCount) {
+        maxNodes = nodeCount;
+        clearGraph();
+        drawCollaborators(musicianName);
+    }
+    
+    drawCollaborators = function(name) {
+        $('#loader').show();
+    
+        var diameter = 720,
+            radius = diameter / 2,
+            innerRadius = radius - 120;
+        
+        var cluster = d3.layout.cluster()
+            .size([360, innerRadius])
+            .sort(null)
+            .value(function(d) { return d.size; });
+        
+        var bundle = d3.layout.bundle();
+        
+        var line = d3.svg.line.radial()
+            .interpolate("bundle")
+            .tension(.85)
+            .radius(function(d) { return d.y; })
+            .angle(function(d) { return d.x / 180 * Math.PI; });
+        
+        var svg = d3.select("body").append("svg")
+            .attr("width", diameter)
+            .attr("height", diameter)
+          .append("g")
+            .attr("transform", "translate(" + radius + "," + radius + ")");
+    
+          $.ajax(ajaxUrl(name), { 
+                beforeSend: function(jqXHR, settings) {
+                    $('#loader').show();
+                },
+                success: function(classes, textStatus, jqXHR) {
+                    $('#loader').hide();
+                
+                  var nodes = cluster(packages.root(classes)),
+                      links = packages.imports(nodes);
+                
+                  svg.selectAll(".link")
+                      .data(bundle(links))
+                    .enter().append("path")
+                      .attr("class", "link")
+                      .attr("d", line);
+                
+                  svg.selectAll(".node")
+                      .data(nodes.filter(function(n) { return !n.children; }))
+                    .enter().append("g")
+                      .attr("class", "node")
+                      .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
+                    .append("a")
+                      .attr("href", "http://www.google.com")
+                    .append("text")
+                      .attr("dx", function(d) { return d.x < 180 ? 8 : -8; })
+                      .attr("dy", ".31em")
+                      .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })
+                      .attr("transform", function(d) { return d.x < 180 ? null : "rotate(180)"; })
+                      .text(function(d) { return d.data.key; });
+                }
+            });
+        
+        
+        d3.select(self.frameElement).style("height", diameter + "px");
+    
+    }
+    
+$(document).ready(function() {
+    musicianName = "<%= @name %>";
+    $('#newName').get(0).value = musicianName;
+    updateMusicianName(musicianName);
+    drawCollaborators("<%= @name %>");
 });
 
-d3.select(self.frameElement).style("height", diameter + "px");
-
 </script>
+
