@@ -191,7 +191,7 @@ class DataManagerController < ApplicationController
 
     ## return the collection used in mongo data store
     def mcoll(collection = "data")
-      conn = Mongo::Connection.new
+      #conn = Mongo::Connection.new
       uri = URI.parse(ENV['MONGOHQ_URL'])
       conn = Mongo::Connection.from_uri(ENV['MONGOHQ_URL'])
       puts "***************************************"
