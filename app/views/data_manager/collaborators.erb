@@ -10,7 +10,7 @@
     <table>
     <tr>
         <td>
-            <div style="display:inline" id="musicianName"></div>'s collaborators <a href="javascript:" id="help">?</a>
+            <div style="display:inline" id="musicianName"></div> <a href="javascript:" id="help">?</a>
             <img id="loader" style="display:none" src="/ajax-loader2.gif" alt="loading..." />
             <br>
             
@@ -37,7 +37,7 @@
 
 
     <script type="text/javascript">
-        var maxNodes = 7;
+        var maxNodes = 4;
         var particleSystem = null;
         var musicianName = "<%= @name %>";
         
@@ -55,7 +55,7 @@
         
         updateMusicianName = function(name) {
             musicianName = name;
-            $('#musicianName').get(0).innerHTML = name;
+            $('#musicianName').get(0).innerHTML = name + "'s collaborators";
         }
 
         updateCollaborators = function() {
@@ -126,7 +126,7 @@
             //var sys = arbor.ParticleSystem(4000, 500, 0.5, false);
             var sys = arbor.ParticleSystem();
             sys.stop();
-            sys.parameters({stiffness:600, repulsion:1000, gravity:true, dt:0.02})
+            sys.parameters({stiffness:500, repulsion:4000, gravity:true, dt:0.02})
             return sys;
         }
 
@@ -139,7 +139,6 @@
                     $('#loader').show();
                 },
                 success: function(data, textStatus, jqXHR) {
-                    //console.log(data);
                     $('#loader').hide();
                     var collaborators = data;
                     var nodeCount = 0;            

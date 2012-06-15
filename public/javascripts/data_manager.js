@@ -11,7 +11,7 @@
             hideLabel: true,
             width: 180,
             minValue: 2,
-            value: 4,
+            value: maxNodes,
             maxValue: 7,
         });
         
@@ -52,6 +52,8 @@
                     h = $(window).height()-60;
                 canvas.width = w; canvas.height = h // resize the canvas element to fill the screen
                 particleSystem.screenSize(w,h) // inform the system so it can map coords for us
+                lastEnergyMean = 0;
+                lastMeanEqual = 0;
                 myRenderer.redraw()
             },
             
@@ -102,15 +104,9 @@
                         if(nearest.distance < 20) {
                             $(viewport).addClass("linkable");
                             activeNode = nearest.node;
-                            myRenderer.drawNode(activeNode, particleSystem.toScreen(nearest.node._p))
                         }
                         else {
                             $(viewport).removeClass("linkable");
-                            if(activeNode != null) {
-                                var node = activeNode;
-                                activeNode = null;
-                                myRenderer.drawNode(node, particleSystem.toScreen(nearest.node._p))
-                            }
                             activeNode = null;
                         }
                     }
@@ -165,7 +161,6 @@
             
             
               ctx.clearRect(pt.x-w/2, pt.y-7, w,14)
-                console.log(node.data.color);
               // draw the text
               if (label)
               {
@@ -174,12 +169,13 @@
                 
                 // if (node.data.region) ctx.fillStyle = palette[node.data.region]
                 // else ctx.fillStyle = "#888888"
-                if(node == activeNode) {
+                /*if(node == activeNode) {
                     ctx.fillStyle = "#00BB00"
                 }
                 else {
                     ctx.fillStyle = node.data.color
-                }
+                }*/
+                ctx.fillStyle = node.data.color
             
                 // ctx.fillText(label||"", pt.x, pt.y+4)
                 ctx.fillText(label||"", pt.x, pt.y+4)

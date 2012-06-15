@@ -162,7 +162,7 @@ class DataManagerController < ApplicationController
         all_names = {}
         collabs = get_collaborators(name)
         collaborator_hash[name] = collabs
-        collab_count = 0
+        collab_count = 1
         collabs.each do |collab|
             all_names[collab] = 1
             collaborator_hash[collab] = get_collaborators(collab)
@@ -191,11 +191,8 @@ class DataManagerController < ApplicationController
 
     ## return the collection used in mongo data store
     def mcoll(collection = "data")
-      #conn = Mongo::Connection.new
       uri = URI.parse(ENV['MONGOHQ_URL'])
       conn = Mongo::Connection.from_uri(ENV['MONGOHQ_URL'])
-      puts "***************************************"
-      puts ENV['MONGOHQ_URL']
       db = conn.db(uri.path.gsub(/^\//, ''))
       #db = conn.db("mgraph")
       data_coll = db.collection(collection)
