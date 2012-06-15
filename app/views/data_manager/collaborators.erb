@@ -139,14 +139,16 @@
                     $('#loader').show();
                 },
                 success: function(data, textStatus, jqXHR) {
+                    //console.log(data);
                     $('#loader').hide();
                     var collaborators = data;
                     var nodeCount = 0;            
                     for(nodeName in collaborators) {
+                        console.log(nodeName);
                         nodeCount += 1;
                         var node1 = particleSystem.addNode(nodeName, {name:nodeName, color:"#000000"});
-                        //console.log(nodeName);
                         for(i in collaborators[nodeName]) {
+                            console.log(i, collaborators[nodeName][i])
                             var node2 = particleSystem.getNode(collaborators[nodeName][i])
                             if(node2 == null) {
                                 node2 = particleSystem.addNode(collaborators[nodeName][i], {color:"#787878", name:collaborators[nodeName][i]});

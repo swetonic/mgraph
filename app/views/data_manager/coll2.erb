@@ -98,6 +98,20 @@
         drawCollaborators(musicianName);
     }
     
+    onTextClick = function(evt) {
+        var targ = evt.target;
+        console.log(targ);
+        console.log(targ.firstChild);
+    }
+
+    onMouseOver = function(evt) {
+        evt.target.style.cursor = "pointer";
+    }
+
+    onMouseOut = function(evt) {
+        evt.target.style.cursor = "arrow";
+    }
+    
     drawCollaborators = function(name) {
         $('#loader').show();
     
@@ -144,9 +158,10 @@
                       .data(nodes.filter(function(n) { return !n.children; }))
                     .enter().append("g")
                       .attr("class", "node")
+                      .attr("onclick", "onTextClick(evt)")
+                      .attr("onmouseover", "onMouseOver(evt)")
+                      .attr("onmouseout", "onMouseOut(evt)")
                       .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
-                    .append("a")
-                      .attr("href", "http://www.google.com")
                     .append("text")
                       .attr("dx", function(d) { return d.x < 180 ? 8 : -8; })
                       .attr("dy", ".31em")

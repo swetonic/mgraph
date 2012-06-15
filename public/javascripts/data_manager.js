@@ -33,6 +33,7 @@
         var dragging = false;
         var lastEnergyMean = 0;
         var lastMeanEqual = 0;
+        var systemAtRest = true;
         
         var myRenderer = {
                   
@@ -164,7 +165,7 @@
             
             
               ctx.clearRect(pt.x-w/2, pt.y-7, w,14)
-            
+                console.log(node.data.color);
               // draw the text
               if (label)
               {
@@ -192,11 +193,16 @@
                 }
                 var en = particleSystem.energy();
                 if(lastEnergyMean == en.mean) {
-                    if(lastMeanEqual >= 10) {
+                    if(lastMeanEqual >= 20) {
                     lastMeanEqual += 1;
+                        systemAtRest = true;
                         return;
                     }
                     lastMeanEqual += 1;
+                }
+                else {
+                    systemAtRest = false;
+                    lastMeanEqual = 0;
                 }
                 
                 lastEnergyMean = en.mean;

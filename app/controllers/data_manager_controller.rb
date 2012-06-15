@@ -1,10 +1,12 @@
 require 'uri'
 require 'net/http'
+require 'mongo'
 
 class DataManagerController < ApplicationController
     API_KEY = 'rk4zzd4n8kr7j3td4vmjvduk'
     SHARED_SECRET = 'AQ3sKz9ugz'
     MAX_NODES = 5
+    
     
     NOTES = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']
     NOTES_WITH_FLATS = ['A', 'Bb', 'B', 'C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab']
@@ -40,6 +42,32 @@ class DataManagerController < ApplicationController
         'F minor 7' => {'G#'=>1, 'D#'=>1},
         'F dominant 7' => {'D#'=>1},
     }
+
+    def mongo_save
+        mcoll.insert({"yo" => "tim", "dude" => 1.2})
+        render :text => "done"
+    end
+    
+    def mongo_search
+      rows = mcoll.find("name" => "tim")      
+      #rows = data_coll.find("_id" => BSON::ObjectId("4fd91bc39e97f8a72aa41ed1"))
+      #row = data_coll.find_one
+      output = ""
+      rows.each do |row|
+          output += row.inspect + "<br>"
+      end
+      render :text => output
+    end
+    
+    def mongo
+      output = ''
+      mcoll.find.each do |data|
+        unless data["name"].nil?
+            output += data["name"].to_s + "<br>"
+        end
+      end
+      render :text => output
+    end
     
     def chords
         if not params.key?('root')
@@ -124,12 +152,54 @@ class DataManagerController < ApplicationController
     end
   
     def collaborators_json
-        render :json => collaborators_hash
+        #get collaborators for params['name']
+        name = params['name']
+        
+        #then make max_nodes lookups for more collaborators
+        max_nodes = params['max_nodes'].to_i
+        
+        collaborator_hash = {}
+        all_names = {}
+        collabs = get_collaborators(name)
+        collaborator_hash[name] = collabs
+        collab_count = 0
+        collabs.each do |collab|
+            all_names[collab] = 1
+            collaborator_hash[collab] = get_collaborators(collab)
+            collaborator_hash[collab].each do |c|
+                all_names[c] = 1
+            end
+            collab_count += 1
+            break if collab_count >= max_nodes
+        end
+
+        #all_names.keys.each do |name|
+        #    if not collaborator_hash.key?(name)
+        #        collaborator_hash[name] = []
+        #    end
+        #end
+        
+        render :json => collaborator_hash
     end
 
+    def call_api
+      render :text => call_info_api(params['name'])
+    end
+    
     ###########################################    
     private
 
+    ## return the collection used in mongo data store
+    def mcoll(collection = "data")
+      conn = Mongo::Connection.new
+      uri = URI.parse(ENV['MONGOHQ_URL'])
+      conn = Mongo::Connection.from_uri(ENV['MONGOHQ_URL'])
+      db = conn.db(uri.path.gsub(/^\//, ''))
+      #db = conn.db("mgraph")
+      data_coll = db.collection(collection)
+      data_coll
+    end
+    
     #convert hash to conform to d3's array format
     def convert_hash(hash)
         val = 1000
@@ -198,27 +268,33 @@ class DataManagerController < ApplicationController
         triads
     end
     
-    def collaborators_hash
-        response = JSON.parse(call_info_api(params['name']))
-        if response['status'] == 'error'
-            {:status => 'error', :text => "No information for #{params['name']}"}
+    ###################
+    def get_collaborators(name)
+        #check if name is in mongo db store
+        data_coll = mcoll
+        rows = data_coll.find("name" => name)      
+        if rows.count == 0
+            #not in mongo, call rovi
+            response = call_info_api(name)
+            #store in mongo
+            id = data_coll.insert({"name" => name, "raw_data" => JSON.parse(response)})
+            doc = data_coll.find({"_id" => id})
+            doc = rows.next
         else
-            max_nodes = MAX_NODES
-            if params.has_key?('max_nodes')
-                max_nodes = params['max_nodes'].to_i
-            end
-            unique_names = {}
-            collaborator_hash = {}
-            puts response
-            if response['name']['collaboratorWithUri'] != nil
-                collaborator_hash = build_collaborators(params['name'], unique_names, max_nodes, collaborator_hash, 
-                    response['name']['collaboratorWithUri'])
-            end
-            collaborator_hash
+            doc = rows.next        
         end
+        
+        if not doc.has_key?("collaborators")
+            #need to fetch the collaborators
+            doc['collaborators'] = api_get_collaborators(doc['raw_data']['name']['collaboratorWithUri'])
+            data_coll.update({"_id"=>doc["_id"]}, doc)
+        end
+        doc["collaborators"]
     end
 
-    def get_collaborators(url)
+    ########
+    ## call rovi to get collaborators
+    def api_get_collaborators(url)
         return [] if url.nil?
         
         collaborators = []
@@ -238,46 +314,35 @@ class DataManagerController < ApplicationController
         collaborators
     end
 
-    def build_collaborators(name, unique_names, max_nodes, collaborator_hash, url)
-        name.downcase!
-        collabs = get_collaborators(url)
-        collaborator_hash[name] = collabs
-        collabs.each do |collab|
-            collab.downcase!
-            if unique_names.has_key?(collab)
-                next
-            end
-            unique_names[collab] = 1
-            if unique_names.size >= max_nodes
-                return collaborator_hash
-            else
-                response = JSON.parse(call_info_api(collab))
-                return build_collaborators(collab, unique_names, max_nodes, collaborator_hash, response['name']['collaboratorWithUri'])
-            end
-        end
-        return collaborator_hash
-    end
-    
     def generate_sig
         Digest::MD5.hexdigest(API_KEY + SHARED_SECRET + Time.now.to_i.to_s)
     end
     
     def call_info_api(name)
-        url = "http://api.rovicorp.com/data/v1/name/info?name="
-        url += name.gsub(' ', '+').gsub('"', "%34")
-        url += "&country=US&language=en&format=json&country=US&language=en&apikey="
-        url += API_KEY
-        url += "&sig=" + generate_sig
-        response = Net::HTTP.get_response( URI.parse( url ) )
-        
-        while not response.body.index("Service Unavailable").nil?
-            puts "*****************************"
-            puts "sleeping"
-            sleep(1)
-            response = Net::HTTP.get_response( URI.parse( url ) )
-        end
-        sleep(0.2)
-        return response.body
+      url = "http://api.rovicorp.com/data/v1/name/info?name="
+      url += name.gsub(' ', '+').gsub('"', "%34")
+      url += "&country=US&language=en&format=json&country=US&language=en&apikey="
+      url += API_KEY
+      url += "&sig=" + generate_sig
+      response = Net::HTTP.get_response( URI.parse( url ) )
+      
+      while not response.body.index("Service Unavailable").nil?
+          puts "*****************************"
+          puts "sleeping"
+          sleep(1)
+          response = Net::HTTP.get_response( URI.parse( url ) )
+      end
+      sleep(0.2)
+      response.body
     end
 
 end
+
+
+
+
+
+
+
+
+
