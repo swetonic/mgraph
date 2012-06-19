@@ -1,4 +1,12 @@
 --- 
-cursor_positions: []
-
+cursor_positions: 
+  - :path: app/assets/javascripts/application.js
+    :cursor_offset: 641
+    :timestamp: 2012-06-03 19:56:49 -07:00
+  - :path: app/helpers/application_helper.rb
+    :cursor_offset: 3
+    :timestamp: 2012-06-09 10:19:48 -07:00
+  - :path: app/controllers/data_manager_controller.rb
+    :cursor_offset: 4482
+    :timestamp: 2012-06-15 14:04:24 -07:00
 files_to_retain: 0

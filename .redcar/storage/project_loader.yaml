@@ -1,3 +1,5 @@
 --- 
-open_files: []
-
+open_files: 
+  - app/assets/javascripts/application.js
+  - app/helpers/application_helper.rb
+  - app/controllers/data_manager_controller.rb
