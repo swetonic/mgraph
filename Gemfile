@@ -9,6 +9,7 @@ gem 'mongo_mapper'
 #gem 'pg'
 
 gem 'oauth'
+gem 'rdio'
 
 # Gems used only for assets and not required
 # in production environments by default.
