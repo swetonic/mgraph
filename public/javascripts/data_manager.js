@@ -69,8 +69,8 @@
                     var pos = $(this).offset();
                     var p = {x:e.pageX-pos.left, y:e.pageY-pos.top}
                     selected = nearest = dragged = particleSystem.nearest(p);
-                
-                    if (selected.node !== null){
+                    
+                    if (selected !== null && selected.node !== null){
                         // dragged.node.tempMass = 10000
                         dragged.node.fixed = true
                     }
@@ -188,21 +188,21 @@
                     return
                 }
                 var en = particleSystem.energy();
-                if(lastEnergyMean == en.mean) {
-                    if(lastMeanEqual >= 20) {
-                    lastMeanEqual += 1;
-                        systemAtRest = true;
-                        return;
+                if(typeof en !== "undefined") {
+                    if(lastEnergyMean == en.mean) {
+                        if(lastMeanEqual >= 20) {
+                        lastMeanEqual += 1;
+                            systemAtRest = true;
+                            return;
+                        }
+                        lastMeanEqual += 1;
                     }
-                    lastMeanEqual += 1;
-                }
-                else {
-                    systemAtRest = false;
-                    lastMeanEqual = 0;
-                }
-                
-                lastEnergyMean = en.mean;
-                //console.log(en.max, en.mean, en.n, particleSystem.fps());
+                    else {
+                        systemAtRest = false;
+                        lastMeanEqual = 0;
+                    }
+                    lastEnergyMean = en.mean;
+                }                
                 
                 ctx.clearRect(0,0, canvas.width, canvas.height);
                 ctx.strokeStyle = "#d3d3d3"

@@ -85,6 +85,7 @@
             $('#editBox').hide();
             var newName = $('#newName').get(0).value;
             updateMusicianName(newName);
+            clearNodes();
             drawCollaborators(ajaxUrl(newName));
         }
         
@@ -127,6 +128,7 @@
             var sys = arbor.ParticleSystem();
             sys.stop();
             sys.parameters({stiffness:500, repulsion:4000, gravity:true, dt:0.02})
+            window.particleSystem = sys;
             return sys;
         }
 
@@ -140,25 +142,26 @@
                 },
                 success: function(data, textStatus, jqXHR) {
                     $('#loader').hide();
-                    var collaborators = data;
-                    var nodeCount = 0;            
-                    for(nodeName in collaborators) {
-                        console.log(nodeName);
-                        nodeCount += 1;
-                        var node1 = particleSystem.addNode(nodeName, {name:nodeName, color:"#000000"});
-                        for(i in collaborators[nodeName]) {
-                            console.log(i, collaborators[nodeName][i])
-                            var node2 = particleSystem.getNode(collaborators[nodeName][i])
-                            if(node2 == null) {
-                                node2 = particleSystem.addNode(collaborators[nodeName][i], {color:"#787878", name:collaborators[nodeName][i]});
-                            }
-                            particleSystem.addEdge(node1, node2, {});
-                        }
-                    }
-                    
-                    if(nodeCount == 0) {
+                    var collaborators = data['data'];
+                    if(data['length'] === 0) {
                         $('#info').text("No Data");    
                     }
+                    else {
+                        var nodeCount = 0;            
+                        for(nodeName in collaborators) {
+                            console.log(nodeName);
+                            nodeCount += 1;
+                            var node1 = particleSystem.addNode(nodeName, {name:nodeName, color:"#000000"});
+                            for(i in collaborators[nodeName]) {
+                                console.log(i, collaborators[nodeName][i])
+                                var node2 = particleSystem.getNode(collaborators[nodeName][i])
+                                if(node2 == null) {
+                                    node2 = particleSystem.addNode(collaborators[nodeName][i], {color:"#787878", name:collaborators[nodeName][i]});
+                                }
+                                particleSystem.addEdge(node1, node2, {});
+                            }
+                        }
+                    }                    
                     particleSystem.renderer = renderer;                    
                     }
                 });

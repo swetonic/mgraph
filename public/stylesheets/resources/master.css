@@ -10,3 +10,57 @@
 #controls td {
     vertical-align:top;
 }
+
+li {
+    color: #0000FF;
+    cursor: pointer;
+}
+div #listTwo {
+    color: #FF0000;
+}
+
+img {
+    border-radius: .7em;
+}
+
+.loremIpsum {
+    padding: .75em;
+    border: 1px dotted black;
+    border-radius: 1em;
+}
+
+.loremIpsum p {
+  color: #676767;
+  font-size: 1.05em;
+}
+
+.dropCap {
+    font-size: 2em;
+}
+
+.moogImg {
+    float:left;
+    padding-right: .5em;
+}
+
+#par1 {
+    color: #333333;
+}
+
+
+div#div2.one {
+    border: .12em solid red;
+    float: right;
+    padding: .3em 3em .3em 3em;
+    color: #99FF45;
+}
+
+
+
+
+
+
+
+
+
+

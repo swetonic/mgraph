@@ -17,12 +17,15 @@ class RdioController < ApplicationController
         set_playback_token
     end
 
+    def show_access_token
+        render :text => get_access_token.inspect
+    end
+
     def activity_stream
         access_token = get_access_token    
         res = access_token.post(RDIO_API_URL, 
-            'method'=>'getActivityStream', 
-            'user'=>'swetonic', 
-            'scope'=>'user')
+            :method=>'getAlbumsForArtist', 
+            :artist=>'Radiohead')
         res_hash = JSON.parse(res.body)
         render :json => res_hash
     end

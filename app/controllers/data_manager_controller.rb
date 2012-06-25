@@ -179,11 +179,25 @@ class DataManagerController < ApplicationController
         #    end
         #end
         
-        render :json => collaborator_hash
+        render :json => {'data' => collaborator_hash, 'length' => collabs.length}
+    end
+
+    def test
     end
 
     def call_api
       render :text => call_info_api(params['name'])
+    end
+    
+    def song_info_json
+        resp = JSON.parse(call_song_info_api(params['song']))
+        if resp['status'] == 'ok'
+            @response = resp
+            url = resp['song']['appearancesUri'] + "&sig=#{generate_sig}"
+            resp = JSON.parse(get_url(url))
+            @appearances = resp['appearances']
+            render :json => resp['appearances']
+        end
     end
     
     ###########################################    
@@ -317,12 +331,23 @@ class DataManagerController < ApplicationController
         Digest::MD5.hexdigest(API_KEY + SHARED_SECRET + Time.now.to_i.to_s)
     end
     
+    def call_song_info_api(song)
+        url = "http://api.rovicorp.com/data/v1/song/info?apikey=#{API_KEY}&sig=#{generate_sig}&track=#{song.gsub(' ', '+').gsub('"', "%34")}"
+        puts url
+        get_url(url)  
+    end
+    
     def call_info_api(name)
       url = "http://api.rovicorp.com/data/v1/name/info?name="
       url += name.gsub(' ', '+').gsub('"', "%34")
       url += "&country=US&language=en&format=json&country=US&language=en&apikey="
       url += API_KEY
       url += "&sig=" + generate_sig
+      
+      get_url(url)      
+    end
+
+    def get_url(url)
       response = Net::HTTP.get_response( URI.parse( url ) )
       
       while not response.body.index("Service Unavailable").nil?

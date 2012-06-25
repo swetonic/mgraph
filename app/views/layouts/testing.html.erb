@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>javascript, css, rails testing</title>
+
+  <%# stylesheet_link_tag    "application", :media => "all" %>
+  <%= stylesheet_link_tag    "resources/master.css" %>
+  <%= javascript_include_tag 'jquery-1.7.2', 'underscore','backbone' %>
+  <%= csrf_meta_tags %>
+</head>
+<body>
+
+<%= yield %>
+
+</body>
+</html>

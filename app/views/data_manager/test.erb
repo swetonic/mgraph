@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <title>My Test Page</title>
+    <script type="text/javascript" src="/javascripts/jquery-1.7.2.js"></script>
+</head>
+
+<script type="text/javascript">
+
+
+    $(document).ready(function() {
+        $('#myDiv').get(0).innerHTML = "hello world!";
+        
+        $('a').click(function(event) {
+            console.log(event);
+            event.preventDefault();
+        });
+        
+    });
+</script>
+
+<body>
+    <div id="myDiv">
+    </div>
+    
+    <a href="http://www.google.com">google</a>
+    
+</body>
+
+</html>
