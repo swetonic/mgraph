@@ -1,6 +1,7 @@
 require 'uri'
 require 'net/http'
 require 'mongo'
+require 'open-uri'
 
 class DataManagerController < ApplicationController
     API_KEY = 'rk4zzd4n8kr7j3td4vmjvduk'
@@ -348,7 +349,7 @@ class DataManagerController < ApplicationController
     end
 
     def get_url(url)
-      response = Net::HTTP.get_response( URI.parse( url ) )
+      response = Net::HTTP.get_response( URI.parse( URI::encode(url) ) )
       
       while not response.body.index("Service Unavailable").nil?
           puts "*****************************"
