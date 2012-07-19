@@ -1,0 +1,92 @@
+<html>
+<head>
+  <title>Video test</title>
+  <style>
+      body {
+          font-family: arial, sans-serif;
+      }
+      #output {
+          width: 640px;
+          height: 480px;
+      }
+      #buffer {
+      //display: none;
+      }
+      p {
+          background: white;
+      }
+  </style>
+</head>
+<body>
+
+<div style="width:740px; height:580px;background-color:red;" id="vidBg">
+<div>
+  <canvas width="640" height="480" id="output"></canvas>
+</div>
+</div>
+
+<a href="#" id="randomBg">Random background colour</a>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+
+
+      var filenameBase = "/M1CU2362C_JP0";
+      var images = [];
+      var numLoaded = 0;
+      var index = 0;
+      var maxIndex = 20;
+      var outputCanvas = document.getElementById('output');
+      var output = outputCanvas.getContext('2d');
+      output.fillStyle="rgb(255,0,0)";
+
+      randVal = function() {
+          return Math.floor( Math.random() * 256 );
+      }
+      $('#randomBg').click(function() {
+          var fillStyle = "rgb(" + randVal() + "," + randVal() + "," + randVal() + ")";
+          output.fillStyle = fillStyle;
+          $('#vidBg').css("background-color", fillStyle);
+      });
+
+      var width = outputCanvas.width;
+      var height = outputCanvas.height;
+
+
+      for(var i = 0; i <= 20; i++) {
+          var file = filenameBase;
+          if(i < 10) {
+              file += "0";
+          }
+          file += i;
+          file += ".png";
+          images[i] = new Image();
+          images[i].onload = function(f) {
+              numLoaded += 1;
+          }
+          images[i].src = file;
+      }
+
+      setInterval(function() {
+          if(numLoaded === 21) {
+            if(index === maxIndex) {
+                index = 0;
+            }
+            output.fillRect(0,0,width,height);
+            output.drawImage(images[index], 10, 10);
+            index += 1;
+          }
+      }, 50);
+
+  })
+
+</script>
+
+
+
+
+
+
+
+
+
